@@ -70,30 +70,37 @@ class DiceRollerApp(tk.Tk):
             die_canvas.create_oval(10, 10, 90, 90, fill="ivory", outline="black", width=2)
             die_canvas.create_text(50, 50, text=str(number), font=("Arial", 30, "bold"))
 
+    def _roll_one_piped_die(self):
+        # This function handles the full logic for a single die roll.
+
+        # Step 1: Determine the base result with the primary bias logic.
+        # 10% chance of a fair roll, 90% chance of a biased roll.
+        if random.randint(1, 100) <= 10:
+            result = random.randint(1, 10)
+        else:
+            # Biased roll logic (P(1) is reduced).
+            roll = random.randint(1, 810)
+            if roll <= 63:
+                result = 1
+            else:
+                result = 2 + (roll - 64) // 83
+
+        # Step 2: Apply the second layer of bias (25% chance to increment 2, 3, or 4).
+        if result in [2, 3, 4] and random.randint(1, 100) <= 25:
+            result += 1
+
+        # Step 3: Apply the third layer of bias (20% chance to re-roll a 3).
+        # If the result is a 3, we recursively call this function to re-roll.
+        if result == 3 and random.randint(1, 100) <= 20:
+            return self._roll_one_piped_die()
+
+        return result
+
     def _roll_d10_piped(self, num_dice):
+        # This is now a simple loop that calls the single-die roller.
         results = []
         for _ in range(num_dice):
-            result = 0
-            # Step 1: Determine the base result with the primary bias logic
-            # With a 10% chance, perform a perfectly fair roll to add noise
-            if random.randint(1, 100) <= 10:
-                result = random.randint(1, 10)
-            else:
-                # Otherwise, perform a biased roll.
-                # P(1) is ~8% average, other faces are ~10.2%
-                roll = random.randint(1, 810)
-                if roll <= 63:  # 63/810 chance for a "1"
-                    result = 1
-                else:
-                    # Map the rest of the range to faces 2-10
-                    result = 2 + (roll - 64) // 83
-
-            # Step 2: Apply the second layer of bias
-            # 25% chance to increment a result of 2, 3, or 4
-            if result in [2, 3, 4] and random.randint(1, 100) <= 25:
-                result += 1
-
-            results.append(result)
+            results.append(self._roll_one_piped_die())
         return results
 
 if __name__ == "__main__":

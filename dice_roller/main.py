@@ -73,27 +73,26 @@ class DiceRollerApp(tk.Tk):
     def _roll_d10_piped(self, num_dice):
         results = []
         for _ in range(num_dice):
-            roll = random.randint(1, 20)
-            if roll == 1:
+            # With a 10% chance, perform a perfectly fair roll to add noise
+            if random.randint(1, 100) <= 10:
+                results.append(random.randint(1, 10))
+                continue
+
+            # Otherwise, perform a biased roll.
+            # The math aims for an overall average P(1) of ~8%.
+            # P_biased(1) = 7/90 ~= 7.78%.
+            # P_biased(n>1) = (83/90) / 9 ~= 10.25%.
+            # We use a roll out of 810 to model this.
+            roll = random.randint(1, 810)
+
+            if roll <= 63:  # 63/810 chance for a "1"
                 results.append(1)
-            elif 2 <= roll <= 3:
-                results.append(2)
-            elif 4 <= roll <= 5:
-                results.append(3)
-            elif 6 <= roll <= 7:
-                results.append(4)
-            elif 8 <= roll <= 9:
-                results.append(5)
-            elif 10 <= roll <= 11:
-                results.append(6)
-            elif 12 <= roll <= 13:
-                results.append(7)
-            elif 14 <= roll <= 15:
-                results.append(8)
-            elif 16 <= roll <= 17:
-                results.append(9)
-            elif 18 <= roll <= 20:
-                results.append(10)
+            else:
+                # The remaining range (64-810) is divided among the other 9 faces.
+                # Each face (2-10) gets a range of 83 numbers.
+                # (roll - 64) maps the roll to a 0-based index.
+                result = 2 + (roll - 64) // 83
+                results.append(result)
         return results
 
 if __name__ == "__main__":
